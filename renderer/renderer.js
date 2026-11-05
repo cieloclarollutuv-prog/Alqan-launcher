@@ -651,7 +651,7 @@ function settingsGeneral() {
     h('label', { class: 'check' }, perf, t('perfFlags')),
     h('label', null, t('dataDir')), dir,
     h('label', null, L2('Actualizaciones: repositorio de GitHub (usuario/repositorio)', 'Updates: GitHub repository (user/repo)')), repo,
-    h('label', { class: 'check' }, autoUp, L2('Avisarme cuando haya una versión nueva', 'Notify me when a new version is out')),
+    h('label', { class: 'check' }, autoUp, L2('Buscar actualizaciones automáticamente (al abrir y cada 30 min)', 'Check for updates automatically (on start and every 30 min)')),
     h('div', { class: 'actions', style: 'margin:0 0 10px' }, h('button', { onclick: async () => {
       msg.textContent = '';
       try {

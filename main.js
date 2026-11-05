@@ -14,6 +14,17 @@ const packs = require('./src/packs');
 const updater = require('./src/update');
 
 let win = null;
+const DEFAULT_REPO = 'cieloclarollutuv-prog/Alqan-launcher';
+let pendingUpdate = null;
+
+async function checkForUpdates() {
+  const st = store.getSettings();
+  if (st.autoUpdateCheck === false) return;
+  try {
+    const info = await updater.check(st.updateRepo || DEFAULT_REPO, app.getVersion());
+    if (info.available && (!pendingUpdate || pendingUpdate.version !== info.version)) { pendingUpdate = info; emit('update:available', info); }
+  } catch { /* sin internet o sin versiones: no molestar */ }
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -50,15 +61,9 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.whenReady().then(() => {
     createWindow();
-    // Aviso de nueva versión al abrir (si hay repositorio configurado)
-    setTimeout(async () => {
-      const st = store.getSettings();
-      if (!st.autoUpdateCheck || !st.updateRepo) return;
-      try {
-        const info = await updater.check(st.updateRepo, app.getVersion());
-        if (info.available) { pendingUpdate = info; emit('update:available', info); }
-      } catch { /* sin internet o sin versiones: no molestar */ }
-    }, 4000);
+    // Búsqueda automática de actualizaciones: al abrir y cada 30 minutos
+    setTimeout(checkForUpdates, 4000);
+    setInterval(checkForUpdates, 30 * 60 * 1000);
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
@@ -328,9 +333,8 @@ ipcMain.handle('app:openExternal', (_e, url) => {
 });
 
 /* ---------- Actualizaciones ---------- */
-let pendingUpdate = null;
 ipcMain.handle('update:check', async () => {
-  const info = await updater.check(store.getSettings().updateRepo, app.getVersion());
+  const info = await updater.check(store.getSettings().updateRepo || DEFAULT_REPO, app.getVersion());
   pendingUpdate = info.available ? info : null;
   return info;
 });

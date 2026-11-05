@@ -1,6 +1,6 @@
 {
   "name": "alqan-launcher",
-  "version": "2.8.0",
+  "version": "2.9.0",
   "description": "Alqan Launcher - launcher de Minecraft moderno, abierto y multiplataforma",
   "main": "main.js",
   "author": "Alqan Launcher contributors",

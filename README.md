@@ -83,9 +83,9 @@ PUBLIC_URL=https://auth.midominio.com PORT=8080 node server.js
 ```bash
 git init && git add . && git commit -m "feat: Alqan Launcher"
 git branch -M main
-git remote add origin https://github.com/cieloclarollutuv-prog/Alqan-launcher.git
+git remote add origin https://github.com/TU_USUARIO/alqan-launcher.git
 git push -u origin main
 git tag v2.8.0 && git push --tags     # compila y publica el instalador en Releases
 ```
 
-Después pon `cieloclarollutuv-prog/Alqan-launcher` en Ajustes → Actualizaciones para que el launcher avise de nuevas versiones.
+Después pon `TU_USUARIO/alqan-launcher` en Ajustes → Actualizaciones para que el launcher avise de nuevas versiones.
