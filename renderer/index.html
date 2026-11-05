@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' http: https: file: data:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alqan Launcher</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="bgimg"></div>
+  <div id="bgdim"></div>
+  <div class="app">
+    <header class="topbar" id="topbar"></header>
+    <main class="content" id="view"></main>
+    <footer class="statusbar">
+      <span id="statusText"></span>
+      <div class="progress hidden" id="progressWrap"><div id="progressBar"></div></div>
+    </footer>
+  </div>
+  <div id="modalRoot"></div>
+  <script src="skins/library.js"></script>
+  <script src="i18n.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
