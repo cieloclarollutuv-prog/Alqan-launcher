@@ -87,5 +87,3 @@ git remote add origin https://github.com/TU_USUARIO/alqan-launcher.git
 git push -u origin main
 git tag v2.8.0 && git push --tags     # compila y publica el instalador en Releases
 ```
-
-Después pon `TU_USUARIO/alqan-launcher` en Ajustes → Actualizaciones para que el launcher avise de nuevas versiones.

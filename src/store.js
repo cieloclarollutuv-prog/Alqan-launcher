@@ -26,8 +26,6 @@ const defaultSettings = () => ({
   autoJava: true,
   minimizeOnLaunch: true,
   perfFlags: true,
-  updateRepo: 'cieloclarollutuv-prog/Alqan-launcher',
-  autoUpdateCheck: true,
   lang: 'es',
   selectedInstance: '',
   selectedAccount: '',

@@ -47,8 +47,6 @@ contextBridge.exposeInMainWorld('alqan', {
 
   launch: invoke('game:launch'),
   openExternal: invoke('app:openExternal'),
-  checkUpdate: invoke('update:check'),
-  installUpdate: invoke('update:install'),
   repairInstance: invoke('game:repair'),
   openLog: invoke('app:openLog'),
   openDataDir: invoke('app:openDataDir'),
@@ -58,6 +56,5 @@ contextBridge.exposeInMainWorld('alqan', {
   onStatus: listen('game:status'),
   onClosed: listen('game:closed'),
   onTask: listen('task:progress'),
-  onUpdate: listen('update:available'),
   onAuthCode: listen('auth:code')
 });

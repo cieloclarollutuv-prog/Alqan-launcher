@@ -11,20 +11,8 @@ const storage = require('./src/storage');
 const auth = require('./src/auth');
 const game = require('./src/game');
 const packs = require('./src/packs');
-const updater = require('./src/update');
 
 let win = null;
-const DEFAULT_REPO = 'cieloclarollutuv-prog/Alqan-launcher';
-let pendingUpdate = null;
-
-async function checkForUpdates() {
-  const st = store.getSettings();
-  if (st.autoUpdateCheck === false) return;
-  try {
-    const info = await updater.check(st.updateRepo || DEFAULT_REPO, app.getVersion());
-    if (info.available && (!pendingUpdate || pendingUpdate.version !== info.version)) { pendingUpdate = info; emit('update:available', info); }
-  } catch { /* sin internet o sin versiones: no molestar */ }
-}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -61,9 +49,6 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.whenReady().then(() => {
     createWindow();
-    // Búsqueda automática de actualizaciones: al abrir y cada 30 minutos
-    setTimeout(checkForUpdates, 4000);
-    setInterval(checkForUpdates, 30 * 60 * 1000);
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
@@ -330,23 +315,6 @@ ipcMain.handle('game:launch', async (_e, opts) => {
 
 ipcMain.handle('app:openExternal', (_e, url) => {
   if (/^https:\/\//.test(url)) return shell.openExternal(url);
-});
-
-/* ---------- Actualizaciones ---------- */
-ipcMain.handle('update:check', async () => {
-  const info = await updater.check(store.getSettings().updateRepo || DEFAULT_REPO, app.getVersion());
-  pendingUpdate = info.available ? info : null;
-  return info;
-});
-ipcMain.handle('update:install', async () => {
-  if (!pendingUpdate) throw new Error('Busca actualizaciones primero.');
-  if (process.platform !== 'win32') { await shell.openExternal(pendingUpdate.page); return 'page'; }
-  const file = await updater.download(pendingUpdate, (pct) => emit('task:progress', { text: 'Descargando actualización…', pct }));
-  emit('task:progress', { text: 'Abriendo el instalador…', pct: 100 });
-  const { spawn } = require('child_process');
-  spawn(file, [], { detached: true, stdio: 'ignore' }).unref();
-  setTimeout(() => app.quit(), 800);
-  return 'installer';
 });
 
 ipcMain.handle('game:repair', (_e, id) => game.repair(id, emit));

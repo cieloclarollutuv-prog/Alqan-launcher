@@ -122,23 +122,11 @@ function renderTop() {
 
 function go(tab) { state.tab = tab; render(); }
 
-function updateBanner() {
-  const u = state.update;
-  if (!u) return null;
-  return h('div', { class: 'card', style: 'display:flex;gap:10px;align-items:center;margin:0 0 12px;border:1px solid var(--accent)' },
-    ico('download'), h('div', { class: 'grow' }, h('b', null, L2(`Nueva versión ${u.version} disponible`, `New version ${u.version} available`)), h('div', { class: 'sub' }, L2(`Tienes la ${u.current}.`, `You have ${u.current}.`))),
-    h('button', { class: 'primary', onclick: async () => {
-      try { setStatus(L2('Descargando actualización…', 'Downloading update…'), true, 0); await api.installUpdate(); }
-      catch (e) { setStatus('', false); alert(cleanError(e)); }
-    } }, L2('Actualizar ahora', 'Update now')),
-    h('button', { onclick: () => { state.update = null; render(); } }, L2('Después', 'Later')));
-}
-
 function render() {
   applyTheme();
   renderTop();
   const views = { instances: viewInstances, browse: viewBrowse, accounts: viewAccounts, skins: viewSkins, packs: viewPacks, settings: viewSettings };
-  $('#view').replaceChildren(...[updateBanner(), views[state.tab]()].filter(Boolean));
+  $('#view').replaceChildren(views[state.tab]());
   if (state.tab === 'browse') loadInstalled();
   if (state.tab === 'settings' && state.settingsTab === 'storage') loadStorage();
 }
@@ -232,7 +220,6 @@ function pushLog(line) {
 }
 
 api.onProgress((p) => setStatus(`${t('dl')} ${p.type}...`, true, p.total ? Math.round((p.task / p.total) * 100) : 0));
-api.onUpdate((info) => { state.update = info; render(); });
 api.onTask((p) => setStatus(p.text, true, p.pct));
 api.onLog(pushLog);
 api.onStatus((s) => { if (s === 'running') setStatus(t('stRunning'), false); });
@@ -501,6 +488,14 @@ function skin3d(src, model) {
 }
 
 function viewSkins() {
+  const page = state.skinTab === 'editor' ? viewSkinEditor() : viewSkinLibrary();
+  const tabs = h('div', { class: 'tabs' }, [['library', L2('Biblioteca', 'Library')], ['editor', L2('Editor', 'Editor')]].map(([id, label]) =>
+    h('button', { class: (state.skinTab || 'library') === id ? 'active' : '', onclick: () => { state.skinTab = id; render(); } }, label)));
+  page.insertBefore(tabs, page.children[1] || null);
+  return page;
+}
+
+function viewSkinLibrary() {
   const en = state.settings.lang === 'en';
   const L = (es, e) => (en ? e : es);
   const lib = window.SKIN_LIB || [];
@@ -641,8 +636,6 @@ function settingsGeneral() {
   const auto = h('input', { type: 'checkbox' }); auto.checked = !!s.autoJava;
   const min = h('input', { type: 'checkbox' }); min.checked = !!s.minimizeOnLaunch;
   const perf = h('input', { type: 'checkbox' }); perf.checked = s.perfFlags !== false;
-  const repo = h('input', { value: s.updateRepo || '', placeholder: 'usuario/repositorio' });
-  const autoUp = h('input', { type: 'checkbox' }); autoUp.checked = s.autoUpdateCheck !== false;
   return h('div', { class: 'card' },
     h('label', null, t('language')), lang,
     h('label', null, t('javaPath')), java,
@@ -650,25 +643,16 @@ function settingsGeneral() {
     h('label', { class: 'check' }, min, t('minimize')),
     h('label', { class: 'check' }, perf, t('perfFlags')),
     h('label', null, t('dataDir')), dir,
-    h('label', null, L2('Actualizaciones: repositorio de GitHub (usuario/repositorio)', 'Updates: GitHub repository (user/repo)')), repo,
-    h('label', { class: 'check' }, autoUp, L2('Buscar actualizaciones automáticamente (al abrir y cada 30 min)', 'Check for updates automatically (on start and every 30 min)')),
-    h('div', { class: 'actions', style: 'margin:0 0 10px' }, h('button', { onclick: async () => {
-      msg.textContent = '';
-      try {
-        await persist({ updateRepo: repo.value.trim() });
-        const info = await api.checkUpdate();
-        if (info.available) { state.update = info; render(); } else { msg.textContent = L2(`Ya tienes la última versión (${info.current}).`, `You are up to date (${info.current}).`); }
-      } catch (e) { msg.textContent = cleanError(e); }
-    } }, ico('download'), L2('Buscar actualización', 'Check for updates'))),
     h('div', { class: 'actions' },
       h('button', { class: 'primary', onclick: async () => {
-        await persist({ javaPath: java.value.trim(), dataDir: dir.value.trim() || s.dataDir, autoJava: auto.checked, minimizeOnLaunch: min.checked, perfFlags: perf.checked, updateRepo: repo.value.trim(), autoUpdateCheck: autoUp.checked });
+        await persist({ javaPath: java.value.trim(), dataDir: dir.value.trim() || s.dataDir, autoJava: auto.checked, minimizeOnLaunch: min.checked, perfFlags: perf.checked });
         msg.textContent = t('saved');
       } }, t('save')),
-      h('button', { onclick: () => api.openDataDir() }, t('openDir'))),
+      h('button', { onclick: () => api.openDataDir() }, t('openDir')),
+      h('button', { onclick: () => startWizard() }, L2('Asistente de bienvenida', 'Welcome wizard'))),
     msg,
     h('p', { class: 'sub', style: 'margin-top:14px' }, `Alqan Launcher v${state.appVersion} · MIT`),
-    h('button', { class: 'sm', onclick: () => api.openExternal('https://github.com/alqan/alqan-launcher') }, 'GitHub'));
+    h('button', { class: 'sm', onclick: () => api.openExternal('https://github.com/cieloclarollutuv-prog/Alqan-launcher') }, 'GitHub'));
 }
 
 const L2 = (es, en) => (state.settings.lang === 'en' ? en : es);
@@ -743,6 +727,7 @@ async function boot() {
   document.documentElement.lang = state.settings.lang;
 
   // Primer uso: cuenta e instancia por defecto para poder jugar enseguida
+  const firstRun = !state.settings.setupDone && !state.accounts.length;
   if (!state.accounts.length) {
     state.accounts = await api.addOffline('Player');
     await persist({ selectedAccount: state.accounts[0].id });
@@ -755,6 +740,7 @@ async function boot() {
     }
   }
   render();
+  if (firstRun) startWizard();
 }
 
 boot();

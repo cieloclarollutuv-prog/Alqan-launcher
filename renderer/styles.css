@@ -163,3 +163,19 @@ img.logo { background: none; border-radius: 50%; width: 28px; height: 28px; obje
 .check{display:flex;align-items:center;gap:6px;cursor:pointer}
 button{display:inline-flex;align-items:center;justify-content:center}
 button.primary .ico{color:inherit}
+
+.ed-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}
+.ed-wrap{overflow:auto;border-radius:var(--radius);background:repeating-conic-gradient(#8884 0 25%,transparent 0 50%) 0/16px 16px;display:inline-block;max-width:100%}
+.ed-canvas{display:block;image-rendering:pixelated;cursor:crosshair}
+.ed-colors{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ed-colors input[type=color]{width:38px;height:30px;padding:0}
+.sw{width:22px;height:22px;padding:0;border-radius:5px;min-width:0}
+.skin-card{position:relative}
+.skin-card .danger{position:absolute;top:2px;right:2px;padding:0 6px;line-height:18px}
+.wizard{max-width:520px;width:92vw}
+.wz-dots{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
+.wz-dot{width:8px;height:8px;border-radius:50%;background:var(--panel2,#8884)}
+.wz-dot.on{background:var(--accent);width:22px;border-radius:4px}
+.wz-choices{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.wz-list{padding-left:18px;line-height:1.7}
+@media(max-width:900px){.ed-layout{grid-template-columns:1fr}}
