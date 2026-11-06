@@ -315,3 +315,125 @@ function wizardRender() {
       WZ.step < WZ_STEPS - 1 && h('button', { onclick: wizardFinish }, L('Saltar', 'Skip')),
       h('button', { class: 'primary', onclick: next }, WZ.step >= WZ_STEPS - 1 ? L('Empezar', 'Start') : L('Siguiente', 'Next'))))));
 }
+
+/* ---------- Pintor de texturas (paquetes de recursos) ---------- */
+// opts: { title, src?, width?, height?, onSave(dataUrl) }
+function openPainter(opts) {
+  const L = L2;
+  const P = { cv: document.createElement('canvas'), tool: 'pencil', color: '#7c6cf0', size: 1, grid: true, undo: [], redo: [], down: false, last: null, z: 8 };
+  const ctx = P.cv.getContext('2d', { willReadFrequently: true });
+  const msg = h('div', { class: 'error' });
+  const disp = h('canvas', { class: 'ed-canvas' });
+  const tile = h('div', { class: 'tile-prev', title: L('Así se ve repetida (como en el juego)', 'How it tiles in game') });
+  const stage = h('div', { class: 'ed-wrap' }, disp);
+  const info = h('span', { class: 'sub' });
+
+  const fit = () => { P.z = Math.max(1, Math.floor(440 / Math.max(P.cv.width, P.cv.height))); };
+  const redraw = () => {
+    const z = P.z, w = P.cv.width, hh = P.cv.height;
+    disp.width = w * z; disp.height = hh * z;
+    const c = disp.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(P.cv, 0, 0, w * z, hh * z);
+    if (P.grid && z >= 6) {
+      c.strokeStyle = 'rgba(128,128,128,.2)'; c.beginPath();
+      for (let i = 1; i < w; i++) { c.moveTo(i * z + .5, 0); c.lineTo(i * z + .5, hh * z); }
+      for (let j = 1; j < hh; j++) { c.moveTo(0, j * z + .5); c.lineTo(w * z, j * z + .5); }
+      c.stroke();
+    }
+    info.textContent = `${w}×${hh}px`;
+  };
+  const preview = () => { const u = P.cv.toDataURL('image/png'), s = Math.max(32, Math.min(64, P.cv.width * 2)); tile.style.backgroundImage = `url(${u})`; tile.style.backgroundSize = `${s}px ${s * P.cv.height / P.cv.width}px`; };
+  const snap = () => { P.undo.push(ctx.getImageData(0, 0, P.cv.width, P.cv.height)); if (P.undo.length > 40) P.undo.shift(); P.redo = []; };
+  const step = (from, to) => { if (!from.length) return; to.push(ctx.getImageData(0, 0, P.cv.width, P.cv.height)); ctx.putImageData(from.pop(), 0, 0); redraw(); preview(); };
+  const at = (e) => { const r = disp.getBoundingClientRect(); return [Math.min(P.cv.width - 1, Math.max(0, Math.floor(((e.clientX - r.left) / r.width) * P.cv.width))), Math.min(P.cv.height - 1, Math.max(0, Math.floor(((e.clientY - r.top) / r.height) * P.cv.height)))]; };
+
+  const fill = (x, y) => {
+    const W = P.cv.width, H = P.cv.height, img = ctx.getImageData(0, 0, W, H), d = img.data, i0 = (y * W + x) * 4;
+    const [tr, tg, tb, ta] = [d[i0], d[i0 + 1], d[i0 + 2], d[i0 + 3]], [r, g, b] = edRgb(P.color);
+    if (ta === 255 && tr === r && tg === g && tb === b) return;
+    const st = [[x, y]];
+    while (st.length) {
+      const [px, py] = st.pop();
+      if (px < 0 || py < 0 || px >= W || py >= H) continue;
+      const i = (py * W + px) * 4;
+      if (d[i] !== tr || d[i + 1] !== tg || d[i + 2] !== tb || d[i + 3] !== ta) continue;
+      d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 255;
+      st.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
+    }
+    ctx.putImageData(img, 0, 0);
+  };
+  const dab = (x, y) => {
+    const s = P.size, x0 = x - Math.floor(s / 2), y0 = y - Math.floor(s / 2);
+    if (P.tool === 'pencil') { ctx.fillStyle = P.color; ctx.fillRect(x0, y0, s, s); }
+    else if (P.tool === 'eraser') ctx.clearRect(x0, y0, s, s);
+    else if (P.tool === 'fill') fill(x, y);
+    else if (P.tool === 'picker') {
+      const p = ctx.getImageData(x, y, 1, 1).data;
+      if (p[3]) { P.color = edHex(p[0], p[1], p[2]); colorIn.value = P.color; }
+    } else {
+      const sx = Math.max(0, x0), sy = Math.max(0, y0), w = Math.min(P.cv.width - sx, s), hh = Math.min(P.cv.height - sy, s);
+      if (w < 1 || hh < 1) return;
+      const img = ctx.getImageData(sx, sy, w, hh), k = P.tool === 'light' ? 14 : -14;
+      for (let i = 0; i < img.data.length; i += 4) if (img.data[i + 3]) for (let c = 0; c < 3; c++) img.data[i + c] = Math.max(0, Math.min(255, img.data[i + c] + k));
+      ctx.putImageData(img, sx, sy);
+    }
+  };
+  const line = (x0, y0, x1, y1) => {
+    const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let err = dx + dy;
+    for (;;) { dab(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 >= dy) { err += dy; x0 += sx; } if (e2 <= dx) { err += dx; y0 += sy; } }
+  };
+  disp.addEventListener('mousedown', (e) => { if (e.button !== 0) return; const [x, y] = at(e); if (P.tool !== 'picker') snap(); P.down = true; P.last = [x, y]; dab(x, y); redraw(); });
+  disp.addEventListener('mousemove', (e) => { if (!P.down || P.tool === 'fill' || P.tool === 'picker') return; const [x, y] = at(e); line(P.last[0], P.last[1], x, y); P.last = [x, y]; redraw(); });
+  const up = () => { if (P.down) { P.down = false; preview(); } };
+  disp.addEventListener('mouseup', up); disp.addEventListener('mouseleave', up);
+
+  const flip = (horizontal) => {
+    snap();
+    const w = P.cv.width, hh = P.cv.height, t = document.createElement('canvas'); t.width = w; t.height = hh;
+    t.getContext('2d').drawImage(P.cv, 0, 0); ctx.clearRect(0, 0, w, hh); ctx.save();
+    if (horizontal) { ctx.translate(w, 0); ctx.scale(-1, 1); } else { ctx.translate(0, hh); ctx.scale(1, -1); }
+    ctx.drawImage(t, 0, 0); ctx.restore(); redraw(); preview();
+  };
+
+  const colorIn = h('input', { type: 'color', value: P.color, oninput: (e) => { P.color = e.target.value; if (P.tool === 'eraser' || P.tool === 'picker') { P.tool = 'pencil'; draw(); } } });
+  const toolsBox = h('div', { class: 'actions', style: 'margin:0 0 8px' });
+  const draw = () => {
+    toolsBox.replaceChildren(...[['pencil', L('Lápiz', 'Pencil')], ['eraser', L('Borrador', 'Eraser')], ['fill', L('Relleno', 'Fill')], ['picker', L('Gotero', 'Picker')], ['light', L('Aclarar', 'Lighten')], ['dark', L('Oscurecer', 'Darken')]]
+      .map(([id, label]) => h('button', { class: P.tool === id ? 'primary' : '', onclick: () => { P.tool = id; draw(); } }, label)));
+  };
+  const sw = ED_PALETTE.map((c) => h('button', { class: 'sw', style: `background:${c}`, title: c, onclick: () => { P.color = c; colorIn.value = c; if (P.tool === 'eraser' || P.tool === 'picker') { P.tool = 'pencil'; draw(); } } }));
+  const sizeSel = h('select', { style: 'width:auto', title: L('Tamaño del pincel', 'Brush size'), onchange: (e) => { P.size = Number(e.target.value); } }, [1, 2, 3, 4].map((s) => h('option', { value: s }, `${L('Pincel', 'Brush')} ${s}`)));
+  const zoomSel = h('select', { style: 'width:auto', onchange: (e) => { P.z = Number(e.target.value); redraw(); } });
+  const gridCb = h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: true, onchange: (e) => { P.grid = e.target.checked; redraw(); } }), L('Cuadrícula', 'Grid'));
+
+  const close = () => $('#modalRoot').replaceChildren();
+  const ready = () => {
+    fit();
+    zoomSel.replaceChildren(...[...new Set([Math.max(1, Math.floor(P.z / 2)), P.z, P.z * 2])].map((z) => h('option', { value: z, selected: z === P.z }, `${z}x`)));
+    draw(); redraw(); preview();
+  };
+
+  $('#modalRoot').replaceChildren(h('div', { class: 'modal-bg' }, h('div', { class: 'modal paint' },
+    h('h2', null, opts.title || L('Pintar textura', 'Paint texture')),
+    toolsBox,
+    h('div', { class: 'ed-colors' }, colorIn, sw, sizeSel),
+    h('div', { class: 'actions', style: 'margin:8px 0' },
+      h('button', { onclick: () => step(P.undo, P.redo) }, L('Deshacer', 'Undo')), h('button', { onclick: () => step(P.redo, P.undo) }, L('Rehacer', 'Redo')),
+      h('button', { onclick: () => flip(true) }, L('Voltear ↔', 'Flip ↔')), h('button', { onclick: () => flip(false) }, L('Voltear ↕', 'Flip ↕')),
+      gridCb, zoomSel, info),
+    h('div', { style: 'display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap' }, stage, h('div', null, h('div', { class: 'sub' }, L('Repetida', 'Tiled')), tile)),
+    msg,
+    h('div', { class: 'actions' }, h('div', { class: 'grow' }),
+      h('button', { onclick: close }, L('Cancelar', 'Cancel')),
+      h('button', { class: 'primary', onclick: async () => { try { await opts.onSave(P.cv.toDataURL('image/png')); close(); } catch (e) { msg.textContent = cleanError(e); } } }, ico('check'), L('Guardar textura', 'Save texture'))))));
+
+  if (opts.src) {
+    const img = new Image();
+    img.onload = () => {
+      if (img.width > 512 || img.height > 512) { msg.textContent = L('La textura es demasiado grande para pintarla (máx. 512 px).', 'Texture too large to paint (max 512 px).'); return; }
+      P.cv.width = img.width; P.cv.height = img.height; ctx.drawImage(img, 0, 0); ready();
+    };
+    img.onerror = () => { msg.textContent = L('No se pudo abrir la imagen.', 'Could not open the image.'); };
+    img.src = opts.src;
+  } else { P.cv.width = opts.width || 16; P.cv.height = opts.height || opts.width || 16; ready(); }
+}

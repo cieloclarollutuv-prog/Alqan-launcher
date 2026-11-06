@@ -179,3 +179,7 @@ button.primary .ico{color:inherit}
 .wz-choices{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .wz-list{padding-left:18px;line-height:1.7}
 @media(max-width:900px){.ed-layout{grid-template-columns:1fr}}
+
+.paint{max-width:760px;width:94vw;max-height:92vh;overflow:auto}
+.tile-prev{width:96px;height:96px;border-radius:var(--radius);image-rendering:pixelated;background-repeat:repeat;border:1px solid var(--panel2,#8884)}
+.tex-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:150px;overflow:auto}

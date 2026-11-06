@@ -11,6 +11,7 @@ const storage = require('./src/storage');
 const auth = require('./src/auth');
 const game = require('./src/game');
 const packs = require('./src/packs');
+const vanilla = require('./src/vanilla');
 
 let win = null;
 
@@ -260,6 +261,16 @@ ipcMain.handle('packs:putTexture', async (_e, { id, name, target }) => {
   const f = await pickPng(); if (!f) return false;
   packs.putTexture(pk(id).dir, name, target, f); return true;
 });
+ipcMain.handle('packs:readTexture', (_e, { id, name, rel }) => packs.readTexture(pk(id).dir, name, rel));
+ipcMain.handle('packs:saveTexture', (_e, { id, name, target, png }) => { packs.writeTexture(pk(id).dir, name, target, Buffer.from(String(png), 'base64')); return true; });
+const jarOf = (id) => {
+  const { inst } = pk(id);
+  const jar = path.join(store.sharedDir(), 'versions', inst.version, `${inst.version}.jar`);
+  if (!fs.existsSync(jar)) throw new Error('Inicia el juego una vez con esta versión para poder ver sus texturas originales.');
+  return jar;
+};
+ipcMain.handle('packs:vanillaSearch', (_e, { id, q }) => vanilla.search(jarOf(id), q));
+ipcMain.handle('packs:vanillaRead', (_e, { id, entry }) => 'data:image/png;base64,' + vanilla.read(jarOf(id), String(entry)).toString('base64'));
 ipcMain.handle('packs:removeFile', (_e, { id, name, rel }) => { packs.removeFile(pk(id).dir, name, rel); return true; });
 ipcMain.handle('packs:setMeta', (_e, { id, name, desc }) => { const { inst, dir } = pk(id); packs.setMeta(dir, inst.version, name, desc); return true; });
 ipcMain.handle('packs:setIcon', async (_e, { id, name }) => { const f = await pickPng(); if (!f) return false; packs.setIcon(pk(id).dir, name, f); return true; });

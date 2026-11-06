@@ -13,6 +13,7 @@ Launcher de Minecraft **minimalista, de código abierto y multiplataforma** (Win
 - **Almacenamiento**: lista lo que ocupa espacio (versiones, instancias, Java, bibliotecas y assets) y permite borrarlo para liberar espacio.
 - **Skins**: biblioteca con vista 3D; se aplican a cuentas no premium mediante un paquete de recursos automático.
 - **Paquetes de recursos**: crea, importa (.zip), edita texturas, cambia icono/descripción, activa y exporta a .zip. Formato correcto para cada versión (incluida 26.x).
+- **Pintor de texturas**: pinta cualquier textura del paquete (o una original del juego) con lápiz, relleno, gotero y más, con vista repetida; también crea texturas nuevas en blanco.
 - **Personalización**: tamaño de texto, tipografía, grosor y color de los iconos (SVG minimalistas), además de colores y fondo.
 - **Java automático** (Adoptium Temurin) para cada versión, español e inglés.
 

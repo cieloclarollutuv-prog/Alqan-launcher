@@ -579,9 +579,29 @@ function viewPacks() {
     const dl = h('datalist', { id: 'texlist' }, TEX_PRESETS.map(([v, l]) => h('option', { value: v }, l)));
     const q = h('input', { placeholder: L('Filtrar texturas…', 'Filter textures…'), value: packSt.filter, oninput: (e) => { packSt.filter = e.target.value; drawGrid(); } });
     const grid = h('div', { class: 'tex-grid' });
+    const blankSize = h('select', { style: 'width:auto' }, [16, 32, 64, 128].map((s) => h('option', { value: s }, `${s}×${s}`)));
+    const vres = h('div', { class: 'tex-list' });
+    let vt = null;
+    const vq = h('input', { placeholder: L('Buscar textura del juego…', 'Search game texture…'), oninput: (e) => {
+      clearTimeout(vt);
+      vt = setTimeout(guard(async () => {
+        const q = e.target.value.trim();
+        if (q.length < 2) { vres.replaceChildren(); return; }
+        const names = await api.pack_vanillaSearch({ id, q });
+        vres.replaceChildren(...names.map((n) => h('button', { class: 'sm', title: n, onclick: guard(async () => {
+          const data = await api.pack_vanillaRead({ id, entry: n });
+          openPainter({ title: n.replace('assets/minecraft/textures/', ''), src: data, onSave: async (png) => { await api.pack_saveTexture({ id, name: p.name, target: n, png: png.split(',')[1] }); await reload(true); } });
+        }) }, n.replace('assets/minecraft/textures/', '').replace('.png', ''))));
+        if (!names.length) vres.append(h('div', { class: 'empty' }, L('Sin resultados.', 'No results.')));
+      }), 250);
+    } });
     const openTex = (f) => openModal(h('h2', null, f.path.split('/').pop()), h('div', { class: 'sub' }, f.path),
       h('div', { class: 'tex-big' }, h('img', { src: f.url })),
       h('div', { class: 'actions' },
+        h('button', { class: 'primary', onclick: guard(async () => {
+          const data = await api.pack_readTexture({ id, name: p.name, rel: f.path });
+          openPainter({ title: f.path.split('/').pop(), src: data, onSave: async (png) => { await api.pack_saveTexture({ id, name: p.name, target: f.path, png: png.split(',')[1] }); await reload(true); } });
+        }) }, ico('brush'), L('Pintar', 'Paint')),
         h('button', { onclick: guard(async () => { if (await api.pack_putTexture({ id, name: p.name, target: f.path.replace(/^assets\/minecraft\/textures\//, '') .replace(/\.png$/, '') })) { closeModal(); await reload(true); } }) }, ico('upload'), L('Reemplazar', 'Replace')),
         h('button', { class: 'danger', onclick: guard(async () => { await api.pack_removeFile({ id, name: p.name, rel: f.path }); closeModal(); await reload(true); }) }, ico('trash'), L('Quitar', 'Remove')),
         h('button', { onclick: closeModal }, L('Cerrar', 'Close'))));
@@ -603,7 +623,17 @@ function viewPacks() {
         h('button', { class: 'danger', onclick: guard(async () => { await api.pack_delete({ id, name: p.name }); packSt.name = null; await reload(); }) }, ico('trash'), L('Eliminar', 'Delete')))),
       h('div', { class: 'card' }, h('label', null, L('Añadir o reemplazar una textura', 'Add or replace a texture')),
         h('div', { class: 'sub' }, L('Escribe la ruta dentro de textures/ (o elige una) y selecciona tu PNG. En versiones antiguas (≤1.20.x) los objetos están en "items/" y bloques en "blocks/".', 'Type the path inside textures/ (or pick one) and choose your PNG. In old versions (≤1.20.x) items use "items/" and blocks "blocks/".')),
-        h('div', { style: 'display:flex;gap:8px' }, target, dl, h('button', { class: 'primary', onclick: guard(async () => { if (await api.pack_putTexture({ id, name: p.name, target: target.value })) await reload(true); }) }, ico('upload'), L('Elegir PNG', 'Choose PNG')))),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, target, dl,
+          h('button', { class: 'primary', onclick: guard(async () => { if (await api.pack_putTexture({ id, name: p.name, target: target.value })) await reload(true); }) }, ico('upload'), L('Elegir PNG', 'Choose PNG')),
+          blankSize,
+          h('button', { onclick: guard(async () => {
+            if (!target.value.trim()) throw new Error(L('Escribe primero la ruta de la textura.', 'Type the texture path first.'));
+            const t = target.value.trim();
+            openPainter({ title: t, width: Number(blankSize.value), onSave: async (png) => { await api.pack_saveTexture({ id, name: p.name, target: t, png: png.split(',')[1] }); await reload(true); } });
+          }) }, ico('brush'), L('Pintar nueva', 'Paint new')))),
+      h('div', { class: 'card' }, h('label', null, L('Texturas originales del juego', 'Original game textures')),
+        h('div', { class: 'sub' }, L('Busca una textura de Minecraft (por ejemplo "diamond_sword" o "stone"), píntala y se guarda en tu paquete.', 'Search a Minecraft texture (e.g. "diamond_sword" or "stone"), paint it and it is saved in your pack.')),
+        vq, vres),
       h('div', { class: 'card' }, h('label', null, L(`Texturas (${packSt.files.length})`, `Textures (${packSt.files.length})`)), q, grid));
   } else editor.append(h('p', { class: 'sub' }, L('Crea un paquete nuevo o importa un .zip para empezar a editarlo.', 'Create a new pack or import a .zip to start editing.')));
 

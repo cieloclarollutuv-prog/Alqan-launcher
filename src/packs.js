@@ -89,13 +89,18 @@ function files(gameDir, name) {
   return out;
 }
 
-function putTexture(gameDir, name, target, srcFile) {
+function writeTexture(gameDir, name, target, buf) {
   const d = packDir(gameDir, name), rel = texPath(target);
   const f = inside(d, rel);
-  const buf = fs.readFileSync(srcFile);
   if (buf.length < 24 || buf.readUInt32BE(0) !== 0x89504e47 || buf.length > 8 * 1048576) throw new Error('El archivo debe ser un PNG (máx. 8 MB)');
   fs.mkdirSync(path.dirname(f), { recursive: true });
   fs.writeFileSync(f, buf);
+}
+const putTexture = (gameDir, name, target, srcFile) => writeTexture(gameDir, name, target, fs.readFileSync(srcFile));
+
+function readTexture(gameDir, name, rel) {
+  const f = inside(packDir(gameDir, name), texPath(rel));
+  return 'data:image/png;base64,' + fs.readFileSync(f).toString('base64');
 }
 
 function removeFile(gameDir, name, rel) {
@@ -147,4 +152,4 @@ function exportZip(gameDir, name, dest) {
   fs.writeFileSync(dest, Buffer.concat([...parts, cd, end]));
 }
 
-module.exports = { list, create, importZip, files, putTexture, removeFile, setMeta, setIcon, toggle, remove, exportZip, packDir };
+module.exports = { list, create, importZip, files, putTexture, writeTexture, readTexture, removeFile, setMeta, setIcon, toggle, remove, exportZip, packDir };
