@@ -1,5 +1,18 @@
 # Alqan Launcher
 
+[![Última versión](https://img.shields.io/github/v/release/cieloclarollutuv-prog/Alqan-launcher?label=descargar)](https://github.com/cieloclarollutuv-prog/Alqan-launcher/releases/latest)
+
+## ⬇️ Descargar
+
+| Sistema | Descarga |
+|---|---|
+| Windows (instalador) | [Alqan-Launcher-Setup.exe](https://github.com/cieloclarollutuv-prog/Alqan-launcher/releases/latest/download/Alqan-Launcher-Setup.exe) |
+| Windows (portable) | [Alqan-Launcher-Portable.exe](https://github.com/cieloclarollutuv-prog/Alqan-launcher/releases/latest/download/Alqan-Launcher-Portable.exe) |
+| Todas las versiones | [Releases](https://github.com/cieloclarollutuv-prog/Alqan-launcher/releases/latest) |
+
+> El instalador no está firmado, así que Windows SmartScreen o Chrome pueden avisar: elige "Conservar" / "Más información > Ejecutar de todas formas".
+
+
 Launcher de Minecraft **minimalista, de código abierto y multiplataforma** (Windows, macOS y Linux), con una interfaz inspirada en Prism Launcher.
 
 ## Características

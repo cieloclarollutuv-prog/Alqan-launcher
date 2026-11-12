@@ -85,11 +85,13 @@ function edFill(x, y) {
   const [tr, tg, tb, ta] = [d[at(x, y)], d[at(x, y) + 1], d[at(x, y) + 2], d[at(x, y) + 3]];
   const [r, g, b] = edRgb(ED.color);
   if (ta === 255 && tr === r && tg === g && tb === b) return;
-  const same = (i) => d[i] === tr && d[i + 1] === tg && d[i + 2] === tb && d[i + 3] === ta;
+  const same = (i) => d[i + 3] === ta && Math.abs(d[i] - tr) + Math.abs(d[i + 1] - tg) + Math.abs(d[i + 2] - tb) <= 36;
+  const seen = new Uint8Array(64 * 64);
   const st = [[x, y]];
   while (st.length) {
     const [px, py] = st.pop();
-    if (px < 0 || py < 0 || px > 63 || py > 63) continue;
+    if (px < 0 || py < 0 || px > 63 || py > 63 || seen[py * 64 + px]) continue;
+    seen[py * 64 + px] = 1;
     const i = at(px, py);
     if (!same(i)) continue;
     d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 255;
@@ -350,12 +352,13 @@ function openPainter(opts) {
     const W = P.cv.width, H = P.cv.height, img = ctx.getImageData(0, 0, W, H), d = img.data, i0 = (y * W + x) * 4;
     const [tr, tg, tb, ta] = [d[i0], d[i0 + 1], d[i0 + 2], d[i0 + 3]], [r, g, b] = edRgb(P.color);
     if (ta === 255 && tr === r && tg === g && tb === b) return;
-    const st = [[x, y]];
+    const seen = new Uint8Array(W * H), st = [[x, y]];
     while (st.length) {
       const [px, py] = st.pop();
-      if (px < 0 || py < 0 || px >= W || py >= H) continue;
+      if (px < 0 || py < 0 || px >= W || py >= H || seen[py * W + px]) continue;
+      seen[py * W + px] = 1;
       const i = (py * W + px) * 4;
-      if (d[i] !== tr || d[i + 1] !== tg || d[i + 2] !== tb || d[i + 3] !== ta) continue;
+      if (d[i + 3] !== ta || Math.abs(d[i] - tr) + Math.abs(d[i + 1] - tg) + Math.abs(d[i + 2] - tb) > 36) continue;
       d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 255;
       st.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
     }

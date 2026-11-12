@@ -1,6 +1,6 @@
 {
   "name": "alqan-launcher",
-  "version": "2.11.0",
+  "version": "2.12.0",
   "description": "Alqan Launcher - launcher de Minecraft moderno, abierto y multiplataforma",
   "main": "main.js",
   "author": "Alqan Launcher contributors",
@@ -71,7 +71,7 @@
       "installerSidebar": "build/installerSidebar.bmp",
       "uninstallerSidebar": "build/installerSidebar.bmp",
       "installerHeader": "build/installerHeader.bmp",
-      "artifactName": "Alqan-Launcher-Setup-${version}.exe",
+      "artifactName": "Alqan-Launcher-Setup.exe",
       "include": "build/installer.nsh",
       "warningsAsErrors": false,
       "uninstallDisplayName": "Alqan Launcher",
@@ -84,7 +84,8 @@
       "target": [
         "dmg",
         "zip"
-      ]
+      ],
+      "artifactName": "Alqan-Launcher-mac-${arch}.${ext}"
     },
     "linux": {
       "icon": "build/icon.png",
@@ -92,11 +93,16 @@
       "target": [
         "AppImage",
         "tar.gz"
-      ]
+      ],
+      "artifactName": "Alqan-Launcher-linux-${arch}.${ext}"
     },
     "afterPack": "build/afterPack.js",
     "portable": {
-      "artifactName": "Alqan-Launcher-Portable-${version}.exe"
+      "artifactName": "Alqan-Launcher-Portable.exe"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cieloclarollutuv-prog/Alqan-launcher.git"
   }
 }

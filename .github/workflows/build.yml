@@ -3,6 +3,8 @@ name: Build Alqan Launcher
 on:
   push:
     tags: ['v*']
+    branches: [main]
+    paths: ['package.json']
   workflow_dispatch:
 
 jobs:
@@ -39,7 +41,6 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -51,6 +52,22 @@ jobs:
           merge-multiple: true
       - name: Huellas SHA-256
         run: cd artifacts && sha256sum *.exe *.dmg *.AppImage 2>/dev/null > SHA256SUMS.txt || true
+      - uses: actions/checkout@v4
+        with:
+          path: src
+      - name: Versión
+        id: v
+        run: echo "tag=v$(node -p "require('./src/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.v.outputs.tag }}
+          name: Alqan Launcher ${{ steps.v.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
           files: artifacts/*
+          body: |
+            ## Descargar
+            - **Windows**: `Alqan-Launcher-Setup.exe` (instalador) o `Alqan-Launcher-Portable.exe`
+            - **macOS**: `Alqan-Launcher-mac-*.dmg`
+            - **Linux**: `Alqan-Launcher-linux-*.AppImage`
+            Verifica con `SHA256SUMS.txt`. El instalador no está firmado: Windows/Chrome pueden avisar; pulsa "Más información > Ejecutar de todas formas".
