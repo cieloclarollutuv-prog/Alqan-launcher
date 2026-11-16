@@ -1,6 +1,6 @@
 {
   "name": "alqan-launcher",
-  "version": "2.12.0",
+  "version": "2.12.1",
   "description": "Alqan Launcher - launcher de Minecraft moderno, abierto y multiplataforma",
   "main": "main.js",
   "author": "Alqan Launcher contributors",
@@ -99,7 +99,8 @@
     "afterPack": "build/afterPack.js",
     "portable": {
       "artifactName": "Alqan-Launcher-Portable.exe"
-    }
+    },
+    "publish": null
   },
   "repository": {
     "type": "git",
